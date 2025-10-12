@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campaign Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  
+  <div id="mainPage" class="page active">
+
+    
+    <section id="dashboard">
+      <h2>📊 Dashboard Summary</h2>
+      <div class="dashboard-cards">
+        <div class="card">
+          <h3>Total Campaigns</h3>
+          <p id="totalCount">0</p>
+        </div>
+        <div class="card">
+          <h3>Active</h3>
+          <p id="activeCount">0</p>
+        </div>
+        <div class="card">
+          <h3>Paused</h3>
+          <p id="pausedCount">0</p>
+        </div>
+        <div class="card">
+          <h3>Completed</h3>
+          <p id="completedCount">0</p>
+        </div>
+      </div>
+    </section>
+
+    
+    <section id="campaignForm">
+      <h2>Add New Campaign</h2>
+      <form id="addCampaignForm">
+        <input type="text" id="campaignName" placeholder="Campaign Name" required>
+        <input type="text" id="clientName" placeholder="Client Name" required>
+        <input type="date" id="startDate" required>
+        <select id="status">
+          <option value="Active">Active</option>
+          <option value="Paused">Paused</option>
+          <option value="Completed">Completed</option>
+        </select>
+        <button type="submit">Add Campaign</button>
+      </form>
+    </section>
+
+    
+    <section id="campaignList">
+      <div class="list-header">
+        <h2>📋 Campaign List</h2>
+        <input type="text" id="search" placeholder="🔍 Search campaigns...">
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Campaign Name</th>
+              <th>Client Name</th>
+              <th>Start Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="campaignTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <button id="logoutBtn">Logout</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
