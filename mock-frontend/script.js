@@ -1,20 +1,31 @@
+let campaigns = [];
 
-window.onload = function() {
+// ===== PAGE LOAD CHECK =====
+window.onload = async function() {
   const user = localStorage.getItem("loggedInUser");
   if (!user) {
     window.location.href = "login.html";
-  } else {
-    fetchCampaigns();
+    return;
+  }
+
+  // Load campaigns from MongoDB
+  try {
+    const res = await fetch("/api/campaigns");
+    campaigns = await res.json(); // populate array from DB
+    renderCampaigns();
+    updateDashboard();
+  } catch (err) {
+    console.error("Failed to load campaigns from DB:", err);
   }
 };
 
-
+// ===== LOGOUT =====
 document.getElementById("logoutBtn").addEventListener("click", () => {
   localStorage.removeItem("loggedInUser");
   window.location.href = "login.html";
 });
 
-
+// ===== ADD CAMPAIGN =====
 document.getElementById("addCampaignForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -23,32 +34,31 @@ document.getElementById("addCampaignForm").addEventListener("submit", async (e) 
   const date = document.getElementById("startDate").value;
   const status = document.getElementById("status").value;
 
-  if (name && client && date) {
-    await fetch("http://localhost:5000/api/campaigns", {
+  if (!name || !client || !date) return;
+
+  const campaign = { name, client, date, status };
+
+  // keep in-memory array
+  campaigns.push(campaign);
+
+  // save to MongoDB
+  try {
+    await fetch("/api/campaigns", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, client, date, status }),
+      body: JSON.stringify(campaign)
     });
-
-    document.getElementById("addCampaignForm").reset();
-    fetchCampaigns();
+  } catch (err) {
+    console.error("Failed to save campaign to DB:", err);
   }
+
+  renderCampaigns();
+  updateDashboard();
+  e.target.reset();
 });
 
-
-async function fetchCampaigns() {
-  try {
-    const res = await fetch("http://localhost:5000/api/campaigns");
-    const campaigns = await res.json();
-    renderCampaigns(campaigns);
-    updateDashboard(campaigns);
-  } catch (err) {
-    console.error("Failed to fetch campaigns:", err);
-  }
-}
-
-
-function renderCampaigns(campaigns) {
+// ===== RENDER CAMPAIGNS =====
+function renderCampaigns() {
   const tbody = document.getElementById("campaignTableBody");
   tbody.innerHTML = "";
   const searchTerm = document.getElementById("search").value.toLowerCase();
@@ -66,45 +76,40 @@ function renderCampaigns(campaigns) {
       <td>${c.client}</td>
       <td>${c.date}</td>
       <td>
-        <select onchange="updateStatus('${c._id}', this.value)">
+        <select onchange="updateStatus(${i}, this.value)">
           <option ${c.status === "Active" ? "selected" : ""}>Active</option>
           <option ${c.status === "Paused" ? "selected" : ""}>Paused</option>
           <option ${c.status === "Completed" ? "selected" : ""}>Completed</option>
         </select>
       </td>
       <td>
-        <button class="delete-btn" onclick="deleteCampaign('${c._id}')">Delete</button>
+        <button class="delete-btn" onclick="deleteCampaign(${i})">Delete</button>
       </td>
     `;
     tbody.appendChild(row);
   });
 }
 
-
-async function updateStatus(id, newStatus) {
-  await fetch(`http://localhost:5000/api/campaigns/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status: newStatus }),
-  });
-  fetchCampaigns();
+// ===== UPDATE STATUS =====
+function updateStatus(index, newStatus) {
+  campaigns[index].status = newStatus;
+  updateDashboard();
 }
 
-
-async function deleteCampaign(id) {
-  await fetch(`http://localhost:5000/api/campaigns/${id}`, {
-    method: "DELETE",
-  });
-  fetchCampaigns();
+// ===== DELETE CAMPAIGN =====
+function deleteCampaign(index) {
+  campaigns.splice(index, 1);
+  renderCampaigns();
+  updateDashboard();
 }
 
-
-function updateDashboard(campaigns) {
+// ===== UPDATE DASHBOARD =====
+function updateDashboard() {
   document.getElementById("totalCount").textContent = campaigns.length;
   document.getElementById("activeCount").textContent = campaigns.filter(c => c.status === "Active").length;
   document.getElementById("pausedCount").textContent = campaigns.filter(c => c.status === "Paused").length;
   document.getElementById("completedCount").textContent = campaigns.filter(c => c.status === "Completed").length;
 }
 
-
-document.getElementById("search").addEventListener("input", fetchCampaigns);
+// ===== SEARCH =====
+document.getElementById("search").addEventListener("input", renderCampaigns);
